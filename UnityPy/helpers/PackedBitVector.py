@@ -75,7 +75,14 @@ def unpack_floats(
 
     # read as int and cast up to double to prevent loss of precision
     quantized_f64 = unpack_ints(packed, start, count)
-    scale = packed.m_Range / ((1 << packed.m_BitSize) - 1)
+
+    # avoid zero division
+    scale_denominator = (1 << packed.m_BitSize) - 1
+    if scale_denominator == 0:
+        scale = 0 if packed.m_Range == 0.0 else float("-inf") if packed.m_Range < 0 else float("inf")
+    else:
+        scale = packed.m_Range / scale_denominator
+
     quantized = [x * scale + packed.m_Start for x in quantized_f64]
     return reshape(quantized, shape)
 
